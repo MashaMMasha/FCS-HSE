@@ -1,0 +1,11 @@
+{
+  "version": 2,
+  "dgSpecHash": "F4CO2uPmAnE=",
+  "success": true,
+  "projectFilePath": "/Users/masha/RiderProjects/mini_hw1/mini_hw1/mini_hw1.csproj",
+  "expectedPackageFiles": [
+    "/Users/masha/.nuget/packages/microsoft.extensions.dependencyinjection/9.0.2/microsoft.extensions.dependencyinjection.9.0.2.nupkg.sha512",
+    "/Users/masha/.nuget/packages/microsoft.extensions.dependencyinjection.abstractions/9.0.2/microsoft.extensions.dependencyinjection.abstractions.9.0.2.nupkg.sha512"
+  ],
+  "logs": []
+}

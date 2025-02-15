@@ -1,0 +1,155 @@
+{
+  "format": 1,
+  "restore": {
+    "/Users/masha/RiderProjects/mini_hw1/mini_hw1.Tests/mini_hw1.Tests.csproj": {}
+  },
+  "projects": {
+    "/Users/masha/RiderProjects/mini_hw1/mini_hw1.Tests/mini_hw1.Tests.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "/Users/masha/RiderProjects/mini_hw1/mini_hw1.Tests/mini_hw1.Tests.csproj",
+        "projectName": "mini_hw1.Tests",
+        "projectPath": "/Users/masha/RiderProjects/mini_hw1/mini_hw1.Tests/mini_hw1.Tests.csproj",
+        "packagesPath": "/Users/masha/.nuget/packages/",
+        "outputPath": "/Users/masha/RiderProjects/mini_hw1/mini_hw1.Tests/obj/",
+        "projectStyle": "PackageReference",
+        "crossTargeting": true,
+        "configFilePaths": [
+          "/Users/masha/.nuget/NuGet/NuGet.Config"
+        ],
+        "originalTargetFrameworks": [
+          "net9.0"
+        ],
+        "sources": {
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net9.0": {
+            "targetAlias": "net9.0",
+            "projectReferences": {
+              "/Users/masha/RiderProjects/mini_hw1/mini_hw1/mini_hw1.csproj": {
+                "projectPath": "/Users/masha/RiderProjects/mini_hw1/mini_hw1/mini_hw1.csproj"
+              }
+            }
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "all"
+        },
+        "SdkAnalysisLevel": "9.0.100"
+      },
+      "frameworks": {
+        "net9.0": {
+          "targetAlias": "net9.0",
+          "dependencies": {
+            "JetBrains.Annotations": {
+              "target": "Package",
+              "version": "[2025.1.0-eap1, )"
+            },
+            "MSTest.TestAdapter": {
+              "target": "Package",
+              "version": "[3.8.0, )"
+            },
+            "MSTest.TestFramework": {
+              "target": "Package",
+              "version": "[3.8.0, )"
+            },
+            "Microsoft.NET.Test.Sdk": {
+              "target": "Package",
+              "version": "[17.13.0, )"
+            }
+          },
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48",
+            "net481"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "frameworkReferences": {
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "/Users/masha/.dotnet/sdk/9.0.100/PortableRuntimeIdentifierGraph.json"
+        }
+      }
+    },
+    "/Users/masha/RiderProjects/mini_hw1/mini_hw1/mini_hw1.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "/Users/masha/RiderProjects/mini_hw1/mini_hw1/mini_hw1.csproj",
+        "projectName": "mini_hw1",
+        "projectPath": "/Users/masha/RiderProjects/mini_hw1/mini_hw1/mini_hw1.csproj",
+        "packagesPath": "/Users/masha/.nuget/packages/",
+        "outputPath": "/Users/masha/RiderProjects/mini_hw1/mini_hw1/obj/",
+        "projectStyle": "PackageReference",
+        "configFilePaths": [
+          "/Users/masha/.nuget/NuGet/NuGet.Config"
+        ],
+        "originalTargetFrameworks": [
+          "net9.0"
+        ],
+        "sources": {
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net9.0": {
+            "targetAlias": "net9.0",
+            "projectReferences": {}
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "all"
+        },
+        "SdkAnalysisLevel": "9.0.100"
+      },
+      "frameworks": {
+        "net9.0": {
+          "targetAlias": "net9.0",
+          "dependencies": {
+            "Microsoft.Extensions.DependencyInjection": {
+              "target": "Package",
+              "version": "[9.0.2, )"
+            }
+          },
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48",
+            "net481"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "frameworkReferences": {
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "/Users/masha/.dotnet/sdk/9.0.100/PortableRuntimeIdentifierGraph.json"
+        }
+      }
+    }
+  }
+}
