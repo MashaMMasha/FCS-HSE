@@ -3,7 +3,7 @@ using System.Collections.Generic;
 namespace BankSystem;
 public class BankAccountFacade
 {
-    private readonly Dictionary<Guid, BankAccount> accounts = new();
+    private Dictionary<Guid, BankAccount> accounts = new();
 
     public Guid CreateAccount(string name)
     {
