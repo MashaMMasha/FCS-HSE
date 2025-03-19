@@ -2,17 +2,17 @@ namespace BankSystem;
 
 public class BankAccount
 {
-    readonly Guid id;
-    readonly string name;
-    double balance;
+    public readonly Guid id;
+    public readonly string name;
+    public double balance;
 
-    BankAccount(string name)
+    public BankAccount(string name)
     {
         id = Guid.NewGuid();
         this.name = name;
         balance = 0;
     }
-    BankAccount(string name, double balance)
+    public BankAccount(string name, double balance)
     {
         id = Guid.NewGuid();
         this.name = name;
