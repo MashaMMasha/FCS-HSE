@@ -1,6 +1,6 @@
 namespace BankSystem;
 
-public interface ICommand
+public interface ICommand<out T>
 {
-    void Execute();
+    T Execute();
 }

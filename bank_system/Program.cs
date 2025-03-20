@@ -1,17 +1,42 @@
-﻿using BankSystem;
+﻿using System;
 using Microsoft.Extensions.DependencyInjection;
+namespace BankSystem;
 
 class Program
 {
+    static IServiceProvider ConfigureServices()
+    {
+        var services = new ServiceCollection();
+        
+        services.AddSingleton<BankAccountFactory>();
+        services.AddSingleton<CategoryFactory>();
+        services.AddSingleton<OperationFactory>();
+        services.AddSingleton<BankFacade>();
+
+        return services.BuildServiceProvider();
+    }
     static void Main()
     {
-        var serviceProvider = new ServiceCollection().AddSingleton<BankFacade>().BuildServiceProvider();
+        var serviceProvider = ConfigureServices();
         var bank = serviceProvider.GetRequiredService<BankFacade>();
-        var commandQueue = new CommandQueue();
 
+        Guid accountId = bank.CreateAccount("Мурашко Мария основной счет", 5000);
+        Guid accountId2 = bank.CreateAccount("Мурашко Мария дополнительный счет", 5000);
+
+        Guid categoryId = bank.CreateCategory("Продукты", OperationType.Income);
+
+        Guid operationId = bank.AddOperation(accountId, categoryId, OperationType.Income, 200, DateTime.Now, "Зарплата");
+        bool deleted = bank.DeleteAccount(Guid.NewGuid()); // ожидается ошибка так как такого счета не существует
         
-        commandQueue.AddCommand(new BankCommand(() => bank.CreateAccount("1000"), "Создание счета"));
+        var accounts = bank.GetAllAccounts();
+        var categories = bank.GetAllCategories();
+        var operations = bank.GetAllOperations();
         
-        commandQueue.ProcessCommands();
+        var jsonExporter = new JsonDataExporter();
+        
+        var consoleObserver = new ConsoleObserver();
+        jsonExporter.AddObserver(consoleObserver);
+        
+        jsonExporter.Export("export.json", accounts, categories, operations);
     }
 }

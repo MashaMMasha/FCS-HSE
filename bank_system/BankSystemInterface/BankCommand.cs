@@ -1,17 +1,15 @@
 namespace BankSystem;
-
-public class BankCommand : ICommand
+public class BankCommand<T> : ICommand<T>
 {
-    private readonly Action _action;
-    private readonly string _description;
-    public BankCommand(Action action, string description)
+    private readonly Func<T> _func;
+
+    public BankCommand(Func<T> func)
     {
-        _action = action;
-        _description = description;
+        _func = func;
     }
 
-    public void Execute()
+    public T Execute()
     {
-        Logger.Log(_description, LogLevel.Info);
+        return _func.Invoke();
     }
 }
