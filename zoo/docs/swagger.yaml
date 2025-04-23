@@ -1,0 +1,502 @@
+definitions:
+  animal.Type:
+    enum:
+    - predator
+    - herbivore
+    - bird
+    - aquarium
+    type: string
+    x-enum-varnames:
+    - Predator
+    - Herbivore
+    - Bird
+    - Aquarium
+  enclosure.Enclosure:
+    properties:
+      animalCount:
+        type: integer
+      animalIDs:
+        additionalProperties:
+          type: object
+        type: object
+      animalType:
+        $ref: '#/definitions/animal.Type'
+      id:
+        type: integer
+      maxCapacity:
+        type: integer
+    type: object
+  http.AddAnimalRequest:
+    properties:
+      animal_type:
+        $ref: '#/definitions/animal.Type'
+      enclosure_id:
+        type: integer
+      favorite_food:
+        type: string
+      name:
+        type: string
+    type: object
+  http.AddEnclosureRequest:
+    properties:
+      animal_type:
+        allOf:
+        - $ref: '#/definitions/animal.Type'
+        description: |-
+          Тип животного
+          required: true
+          enum: predator,herbivore,bird,aquarium
+          example: aquarium
+      capacity:
+        description: |-
+          Вместимость вольера
+          required: true
+          minimum: 1
+          example: 10
+        type: integer
+    type: object
+  http.AddFeedingScheduleRequest:
+    properties:
+      animal_id:
+        type: integer
+      feeding_interval:
+        type: integer
+      food_type:
+        type: string
+    type: object
+  http.ChangeEnclosureRequest:
+    properties:
+      animal_id:
+        type: integer
+      enclosure_id:
+        type: integer
+    type: object
+  http.ChangeFeedingIntervalRequest:
+    properties:
+      feeding_interval:
+        type: integer
+      schedule_id:
+        type: integer
+    type: object
+  http.DeleteAnimalRequest:
+    properties:
+      id:
+        type: integer
+    type: object
+  http.DeleteEnclosureRequest:
+    properties:
+      id:
+        description: |-
+          ID вольера
+          required: true
+          example: 1
+        type: integer
+    type: object
+  http.FeedAnimalRequest:
+    properties:
+      animal_id:
+        type: integer
+      food:
+        type: string
+    type: object
+  http.GetAllAnimalsResponse:
+    properties:
+      animals:
+        items:
+          $ref: '#/definitions/http.GetAnimalResponse'
+        type: array
+    type: object
+  http.GetAllEnclosuresResponse:
+    properties:
+      animal_count:
+        type: integer
+      animal_ids:
+        items:
+          type: integer
+        type: array
+      animal_type:
+        $ref: '#/definitions/animal.Type'
+      id:
+        type: integer
+      max_capacity:
+        type: integer
+    type: object
+  http.GetAnimalRequest:
+    properties:
+      id:
+        type: integer
+    type: object
+  http.GetAnimalResponse:
+    properties:
+      animal_type:
+        $ref: '#/definitions/animal.Type'
+      enclosure_id:
+        type: integer
+      favorite_food:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+    type: object
+info:
+  contact: {}
+paths:
+  /animal:
+    delete:
+      consumes:
+      - application/json
+      description: Удаляет животное из вольера
+      parameters:
+      - description: ID животного
+        in: body
+        name: animal
+        required: true
+        schema:
+          $ref: '#/definitions/http.DeleteAnimalRequest'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: Успешно удалено
+          schema:
+            type: string
+        "400":
+          description: Неверный формат запроса
+          schema:
+            type: string
+        "404":
+          description: Животное не найдено
+          schema:
+            type: string
+        "500":
+          description: Ошибка сервера
+          schema:
+            type: string
+      summary: Удаление животного
+      tags:
+      - animals
+    get:
+      consumes:
+      - application/json
+      description: Возвращает информацию о животном по ID
+      parameters:
+      - description: ID животного
+        in: body
+        name: animal
+        required: true
+        schema:
+          $ref: '#/definitions/http.GetAnimalRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/http.GetAnimalResponse'
+        "400":
+          description: Неверный формат запроса
+          schema:
+            type: string
+        "404":
+          description: Животное не найдено
+          schema:
+            type: string
+        "500":
+          description: Ошибка сервера
+          schema:
+            type: string
+      summary: Получение информации о животном
+      tags:
+      - animals
+    post:
+      consumes:
+      - application/json
+      description: Добавляет новое животное в вольер
+      parameters:
+      - description: Новое животное
+        in: body
+        name: animal
+        required: true
+        schema:
+          $ref: '#/definitions/http.AddAnimalRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: ID нового животного
+          schema:
+            type: string
+        "400":
+          description: Неверный формат запроса
+          schema:
+            type: string
+        "500":
+          description: Ошибка сервера
+          schema:
+            type: string
+      summary: Создание нового животного
+      tags:
+      - animals
+  /animal/move:
+    post:
+      consumes:
+      - application/json
+      description: Перемещает животное в другой вольер
+      parameters:
+      - description: ID животного и ID нового вольера
+        in: body
+        name: animal
+        required: true
+        schema:
+          $ref: '#/definitions/http.ChangeEnclosureRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Успешно перемещено
+          schema:
+            type: string
+        "400":
+          description: Неверный формат запроса
+          schema:
+            type: string
+        "404":
+          description: Животное или вольер не найдены
+          schema:
+            type: string
+        "500":
+          description: Ошибка сервера
+          schema:
+            type: string
+      summary: Перемещение животного в другой вольер
+      tags:
+      - animals
+  /animals:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает список всех животных
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/http.GetAllAnimalsResponse'
+        "500":
+          description: Ошибка сервера
+          schema:
+            type: string
+      summary: Получение всех животных
+      tags:
+      - animals
+  /enclosure:
+    delete:
+      consumes:
+      - application/json
+      description: Удаляет вольер по ID
+      parameters:
+      - description: ID вольера
+        in: body
+        name: id
+        required: true
+        schema:
+          $ref: '#/definitions/http.DeleteEnclosureRequest'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: Вольер удален
+        "400":
+          description: Неверный формат запроса
+          schema:
+            type: string
+        "500":
+          description: Ошибка сервера
+          schema:
+            type: string
+      summary: Удаление вольера
+      tags:
+      - enclosures
+    get:
+      consumes:
+      - application/json
+      description: Возвращает вольер по ID
+      parameters:
+      - description: ID вольера
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/http.GetAllEnclosuresResponse'
+        "400":
+          description: Неверный формат запроса
+          schema:
+            type: string
+        "404":
+          description: Вольер не найден
+          schema:
+            type: string
+        "500":
+          description: Ошибка сервера
+          schema:
+            type: string
+      summary: Получение вольера по ID
+      tags:
+      - enclosures
+    post:
+      consumes:
+      - application/json
+      description: Добавляет новый вольер
+      parameters:
+      - description: Данные нового вольера
+        in: body
+        name: enclosure
+        required: true
+        schema:
+          $ref: '#/definitions/http.AddEnclosureRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: ID нового вольера
+          schema:
+            type: string
+        "400":
+          description: Неверный формат запроса
+          schema:
+            type: string
+        "500":
+          description: Ошибка сервера
+          schema:
+            type: string
+      summary: Создание нового вольера
+      tags:
+      - enclosures
+  /enclosures:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает список всех вольеров
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Список вольеров
+          schema:
+            items:
+              $ref: '#/definitions/enclosure.Enclosure'
+            type: array
+        "500":
+          description: Ошибка сервера
+          schema:
+            type: string
+      summary: Получение всех вольеров
+      tags:
+      - enclosures
+  /feeding:
+    post:
+      consumes:
+      - application/json
+      description: Кормит животное по расписанию
+      parameters:
+      - description: ID животного
+        in: body
+        name: animal
+        required: true
+        schema:
+          $ref: '#/definitions/http.FeedAnimalRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Животное покормлено
+          schema:
+            type: string
+        "400":
+          description: Неверный формат запроса
+          schema:
+            type: string
+        "404":
+          description: Животное не найдено
+          schema:
+            type: string
+        "409":
+          description: Животное не голодно
+          schema:
+            type: string
+        "500":
+          description: Ошибка сервера
+          schema:
+            type: string
+      summary: Кормление животного
+      tags:
+      - feeding
+  /feeding/schedule:
+    post:
+      consumes:
+      - application/json
+      description: Добавляет новое расписание кормления для животного
+      parameters:
+      - description: Новое расписание кормления
+        in: body
+        name: schedule
+        required: true
+        schema:
+          $ref: '#/definitions/http.AddFeedingScheduleRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: ID нового расписания
+          schema:
+            type: string
+        "400":
+          description: Неверный формат запроса
+          schema:
+            type: string
+        "500":
+          description: Ошибка сервера
+          schema:
+            type: string
+      summary: Создание нового расписания кормления
+      tags:
+      - feeding
+  /feeding/schedule/interval:
+    put:
+      consumes:
+      - application/json
+      description: Изменяет интервал кормления для расписания
+      parameters:
+      - description: Изменение интервала кормления
+        in: body
+        name: schedule
+        required: true
+        schema:
+          $ref: '#/definitions/http.ChangeFeedingIntervalRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Интервал кормления изменен
+          schema:
+            type: string
+        "400":
+          description: Неверный формат запроса
+          schema:
+            type: string
+        "500":
+          description: Ошибка сервера
+          schema:
+            type: string
+      summary: Изменение интервала кормления
+      tags:
+      - feeding
+swagger: "2.0"
