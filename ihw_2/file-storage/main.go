@@ -23,7 +23,10 @@ func main() {
 	defer database.Close()
 
 	r := mux.NewRouter()
-	fileHandler := handler.NewFileHandler(database)
+	fileHandler, err := handler.NewFileHandler(database)
+	if err != nil {
+		log.Fatalf("Failed to create fileHandler: %v", err)
+	}
 	fileHandler.RegisterRoutes(r)
 
 	log.Println("Сервер запущен на :8001")

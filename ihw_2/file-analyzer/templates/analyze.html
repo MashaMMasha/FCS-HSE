@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Analyze File</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+<body>
+<nav>
+    <a href="/analyze">Analyze</a>
+    <a href="/results">Results</a>
+</nav>
+
+<div class="container">
+    <h1>Analyze File</h1>
+    <form action="/api/analyze" method="post" enctype="multipart/form-data">
+        <input type="file" name="file" required>
+        <button type="submit">Analyze</button>
+    </form>
+</div>
+</body>
+</html>

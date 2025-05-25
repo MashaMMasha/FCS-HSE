@@ -7,52 +7,64 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
-	"strings"
+	"time"
 )
 
-func newProxy(target string, pathRewrite string) *httputil.ReverseProxy {
-	targetURL, _ := url.Parse(target)
+func newProxy(target string) *httputil.ReverseProxy {
+	targetURL, err := url.Parse(target)
+	if err != nil {
+		log.Fatalf("Ошибка парсинга URL %s: %v", target, err)
+	}
 	proxy := httputil.NewSingleHostReverseProxy(targetURL)
 
 	originalDirector := proxy.Director
 	proxy.Director = func(req *http.Request) {
+		originalPath := req.URL.Path
 		originalDirector(req)
-		req.URL.Path = strings.Replace(req.URL.Path, pathRewrite, "", 1)
-		log.Printf("Proxying: %s -> %s%s", req.URL.Path, targetURL, req.URL.Path)
+		log.Printf("[PROXY] %s %s -> %s%s", req.Method, originalPath, targetURL.String(), req.URL.Path)
 	}
+
+	proxy.ErrorHandler = func(w http.ResponseWriter, r *http.Request, err error) {
+		log.Printf("[ERROR] При проксировании запроса %s %s: %v", r.Method, r.URL.Path, err)
+		http.Error(w, "Прокси-сервер вернул ошибку", http.StatusBadGateway)
+	}
+
 	return proxy
 }
 
+func logRequestsMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		start := time.Now()
+		log.Printf("[REQUEST] %s %s", r.Method, r.URL.Path)
+		next.ServeHTTP(w, r)
+		log.Printf("[DONE] %s %s за %v", r.Method, r.URL.Path, time.Since(start))
+	})
+}
+
 func main() {
-	storageProxy := newProxy("http://file-storage:8001", "/api")
-	analyzerProxy := newProxy("http://file-analyzer:8002", "/api")
+	storageProxy := newProxy("http://file-storage:8001")
+	analyzerProxy := newProxy("http://file-analyzer:8002")
 
 	router := mux.NewRouter()
+	router.Use(logRequestsMiddleware)
 
-	apiRouter := router.PathPrefix("/api").Subrouter()
-	apiRouter.HandleFunc("/upload", func(w http.ResponseWriter, r *http.Request) {
-		storageProxy.ServeHTTP(w, r)
-	}).Methods("POST")
+	storageApiRouter := router.PathPrefix("/api/storage").Subrouter()
+	storageApiRouter.Handle("/upload", storageProxy).Methods("POST")
+	storageApiRouter.Handle("/files", storageProxy).Methods("GET")
+	storageApiRouter.Handle("/files/{filename}", storageProxy).Methods("GET")
+	storageApiRouter.Handle("/download/{filename}", storageProxy).Methods("GET")
 
-	apiRouter.HandleFunc("/files", func(w http.ResponseWriter, r *http.Request) {
-		storageProxy.ServeHTTP(w, r)
-	}).Methods("GET")
+	analysisApiRouter := router.PathPrefix("/api/analysis").Subrouter()
+	analysisApiRouter.Handle("/results/{filename:.*}", analyzerProxy).Methods("GET")
 
-	apiRouter.HandleFunc("/analyze", func(w http.ResponseWriter, r *http.Request) {
-		analyzerProxy.ServeHTTP(w, r)
-	}).Methods("POST")
+	router.Handle("/upload", storageProxy).Methods("GET")
+	router.Handle("/files", storageProxy).Methods("GET")
+	router.Handle("/download/{filename}", storageProxy).Methods("GET")
+	router.Handle("/analyze", analyzerProxy).Methods("GET")
+	router.Handle("/analysis/results", analyzerProxy).Methods("GET")
 
-	router.HandleFunc("/upload", func(w http.ResponseWriter, r *http.Request) {
-		storageProxy.ServeHTTP(w, r)
-	}).Methods("GET")
-
-	router.HandleFunc("/files", func(w http.ResponseWriter, r *http.Request) {
-		storageProxy.ServeHTTP(w, r)
-	}).Methods("GET")
-
-	router.PathPrefix("/static/").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		storageProxy.ServeHTTP(w, r)
-	})
+	router.PathPrefix("/static/storage/").Handler(storageProxy)
+	router.PathPrefix("/static/analysis/").Handler(analyzerProxy)
 
 	cors := handlers.CORS(
 		handlers.AllowedOrigins([]string{"*"}),
@@ -60,8 +72,10 @@ func main() {
 		handlers.AllowedHeaders([]string{"Content-Type", "Authorization"}),
 	)
 
-	loggedRouter := handlers.LoggingHandler(log.Writer(), router)
+	loggedRouter := handlers.LoggingHandler(log.Writer(), cors(router))
 
-	log.Println("API Gateway запущен на :8080")
-	log.Fatal(http.ListenAndServe(":8080", cors(loggedRouter)))
+	log.Println("[INFO] API Gateway запущен на :8080")
+	if err := http.ListenAndServe(":8080", loggedRouter); err != nil {
+		log.Fatalf("Ошибка запуска сервера: %v", err)
+	}
 }

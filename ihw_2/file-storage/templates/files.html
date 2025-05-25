@@ -1,24 +1,118 @@
-{{template "base.html" .}}
-{{define "content"}}
-<h1>Files List</h1>
-<table>
-    <thead>
-    <tr>
-        <th>Filename</th>
-        <th>Size</th>
-        <th>Actions</th>
-    </tr>
-    </thead>
-    <tbody>
-    {{range .Files}}
-    <tr>
-        <td>{{.Name}}</td>
-        <td>{{.Size}} bytes</td>
-        <td>
-            <a href="/download/{{.Name}}">Download</a>
-        </td>
-    </tr>
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Файлы</title>
+    <link rel="stylesheet" href="/static/storage/css/styles.css">
+    <link rel="stylesheet" href="/static/storage/css/files.css">
+    <style>
+        .action-btns {
+            display: flex;
+            gap: 10px;
+        }
+        .analyze-btn {
+            background-color: #4CAF50;
+            color: white;
+            padding: 6px 12px;
+            text-decoration: none;
+            border-radius: 4px;
+            transition: background 0.3s;
+            cursor: pointer;
+        }
+        .analyze-btn:hover {
+            background-color: #45a049;
+        }
+        .download-btn {
+            background-color: #2196F3;
+            color: white;
+            padding: 6px 12px;
+            text-decoration: none;
+            border-radius: 4px;
+            transition: background 0.3s;
+        }
+        .download-btn:hover {
+            background-color: #0b7dda;
+        }
+        .analysis-result {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            background: #f7f7f7;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+<nav>
+    <a href="/upload">Загрузка файла</a>
+    <a href="/files">Файлы</a>
+</nav>
+
+<div class="container">
+    <h1>Список файлов</h1>
+    {{if .}}
+    <table class="file-table">
+        <thead>
+        <tr>
+            <th>Имя файла</th>
+            <th>Размер</th>
+            <th>Действия</th>
+        </tr>
+        </thead>
+        <tbody>
+        {{range .}}
+        <tr>
+            <td>{{.Name}}</td>
+            <td>{{.Size}} bytes</td>
+            <td>
+                <div class="action-btns">
+                    <a href="/download/{{.Name}}" class="download-btn">Скачать</a>
+                    <button class="analyze-btn" data-filename="{{.Name}}">Анализировать</button>
+                </div>
+            </td>
+        </tr>
+        {{end}}
+        </tbody>
+    </table>
+    <div id="analysis-result" class="analysis-result" style="display: none;"></div>
+    {{else}}
+    <p class="no-files">Пока не загружено ни одного файла</p>
     {{end}}
-    </tbody>
-</table>
-{{end}}
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const buttons = document.querySelectorAll(".analyze-btn");
+        const resultBlock = document.getElementById("analysis-result");
+
+        buttons.forEach(btn => {
+            btn.addEventListener("click", async function () {
+                const filename = this.getAttribute("data-filename");
+
+                resultBlock.style.display = "block";
+                resultBlock.textContent = "⏳ Получение результатов анализа файла: " + filename;
+
+                try {
+                    const response = await fetch(`/api/analysis/results/${encodeURIComponent(filename)}`, {
+                        method: "GET"
+                    });
+
+                    if (!response.ok) {
+                        throw new Error("HTTP error " + response.status);
+                    }
+
+                    const data = await response.json();
+
+                    resultBlock.innerHTML = `
+                        ✅ <strong>${filename}</strong> проанализирован:<br>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                } catch (err) {
+                    resultBlock.textContent = "❌ Ошибка при запросе к API";
+                    console.error(err);
+                }
+            });
+        });
+    });
+</script>
+</body>
+</html>

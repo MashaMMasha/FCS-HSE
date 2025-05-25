@@ -67,7 +67,15 @@ func (s *FileService) UploadFile(w http.ResponseWriter, r *http.Request) {
 		respondWithError(w, http.StatusInternalServerError, "Ошибка при копировании файла")
 		return
 	}
-
+	exists, err := db.FileExists(s.db, header.Filename)
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Ошибка при обращении к базе данных")
+		return
+	}
+	if exists {
+		respondWithError(w, http.StatusBadRequest, "Вы уже загружали такой файл")
+		return
+	}
 	fileID, err := db.SaveFileMeta(s.db, header.Filename, size, dstPath)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Ошибка при сохранении метаинформации")

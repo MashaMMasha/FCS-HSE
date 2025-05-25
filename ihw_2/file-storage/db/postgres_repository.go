@@ -74,3 +74,15 @@ func GetAllFiles(db *sql.DB) ([]map[string]interface{}, error) {
 
 	return files, nil
 }
+
+func FileExists(db *sql.DB, name string) (bool, error) {
+	rows, err := db.Query("SELECT id FROM files WHERE name = $1", name)
+	if err != nil {
+		return false, fmt.Errorf("failed to query files: %w", err)
+	}
+	defer rows.Close()
+	if rows.Next() {
+		return true, nil
+	}
+	return false, nil
+}

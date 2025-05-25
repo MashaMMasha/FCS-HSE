@@ -7,7 +7,7 @@ services:
       - "8080:8080"
     depends_on:
       - file-storage
-#      - file-analyzer
+      - file-analyzer
 
   file-storage:
     env_file: ./file-storage/.env
@@ -21,11 +21,18 @@ services:
       - ./file-storage/uploads:/app/uploads
       - ./file-storage/static:/app/static
       - ./file-storage/templates:/app/templates
-#
-#  file-analyzer:
-#    build: ./file-analyzer
-#    ports:
-#      - "8002:8002"
+
+  file-analyzer:
+    env_file: ./file-analyzer/.env
+    build: ./file-analyzer
+    ports:
+      - "8002:8002"
+    depends_on:
+      file-storage-db:
+        condition: service_healthy
+    volumes:
+      - ./file-analyzer/static:/app/static
+      - ./file-analyzer/templates:/app/templates
 
   file-storage-db:
     image: postgres:15
@@ -43,3 +50,4 @@ services:
       retries: 5
     volumes:
       - ./db/init_file_storage.sql:/docker-entrypoint-initdb.d/init_file_storage.sql
+      - ./db/init_file_analyzes.sql:/docker-entrypoint-initdb.d/init_file_analyzes.sql
