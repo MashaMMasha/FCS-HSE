@@ -1,0 +1,53 @@
+package service
+
+import (
+	"context"
+	"log"
+	"orders-service/infrastructure/kafka"
+	"time"
+)
+
+type OutboxWorker struct {
+	broker kafka.Broker
+	outbox kafka.Outboxer
+	lg     *log.Logger
+}
+
+func NewOutboxWorker(broker kafka.Broker, outbox kafka.Outboxer, lg *log.Logger) *OutboxWorker {
+	return &OutboxWorker{broker: broker, outbox: outbox, lg: lg}
+}
+
+func (w *OutboxWorker) try() error {
+	e, err := w.outbox.Get()
+	if err != nil || e == nil {
+		return err
+	}
+
+	err = w.broker.Send(e)
+	if err != nil {
+		return err
+	}
+	_ = w.outbox.Complete(e)
+	return nil
+}
+
+func (w *OutboxWorker) Start(ctx context.Context, handlePeriod time.Duration) {
+	ticker := time.NewTicker(handlePeriod)
+
+	go func() {
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-ticker.C:
+				err := w.try()
+
+				if err != nil {
+					w.lg.Printf("Outbox worker error: %s", err)
+				} else {
+					w.lg.Printf("Event completed successfully")
+				}
+			}
+		}
+	}()
+}

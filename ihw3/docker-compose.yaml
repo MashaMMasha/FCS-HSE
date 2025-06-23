@@ -1,0 +1,139 @@
+services:
+  zookeeper:
+    image: bitnami/zookeeper:3.8
+    environment:
+      - ALLOW_ANONYMOUS_LOGIN=yes
+    ports:
+      - "2181:2181"
+    volumes:
+      - zookeeper_data:/bitnami/zookeeper
+
+  kafka:
+    image: bitnami/kafka:3.4
+    environment:
+      - KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE=true
+      - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092
+      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092
+      - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
+      - ALLOW_PLAINTEXT_LISTENER=yes
+      - KAFKA_CFG_LOG4J_LOGGERS=kafka.request.logger=DEBUG
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+    volumes:
+      - kafka_data:/bitnami/kafka
+
+    healthcheck:
+      test: ["CMD", "kafka-topics.sh", "--list", "--bootstrap-server", "localhost:9092"]
+      interval: 3s
+      timeout: 10s
+      retries: 3
+
+  orders-service:
+    build: orders-service
+    hostname: orders-service
+    ports:
+      - "8001:8001"
+    env_file:
+      - "orders-service/.env"
+      - "kafka.env"
+    depends_on:
+      kafka:
+        condition: service_healthy
+      orders-db:
+        condition: service_healthy
+        restart: true
+
+  orders-db:
+    image: postgres:13
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: orders-db
+      PGDATA: /var/lib/postgresql/data/orders-pgdata
+    ports:
+      - "5432:5432"
+    volumes:
+      - orders-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 1s
+      timeout: 3s
+      retries: 3
+
+  payments-service:
+    build: payment-service
+    hostname: payment-service
+    ports:
+      - "8002:8002"
+    env_file:
+      - "payment-service/.env"
+      - "kafka.env"
+    depends_on:
+      kafka:
+        condition: service_healthy
+      payments-db:
+        condition: service_healthy
+        restart: true
+
+  payments-db:
+    image: postgres:13
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: payments-db
+      PGDATA: /var/lib/postgresql/data/payments-pgdata
+    ports:
+      - "5430:5432"
+    volumes:
+      - payments-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 1s
+      timeout: 3s
+      retries: 3
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    hostname: frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - orders-service
+      - payments-service
+    environment:
+      - NGINX_HOST=localhost
+      - NGINX_PORT=80
+    restart: unless-stopped
+
+  api-gateway:
+    build: ./api-gateway
+    hostname: api-gateway
+    ports:
+      - "8000:8000"
+    depends_on:
+      - orders-service
+      - payments-service
+
+  kafka-init:
+    image: bitnami/kafka:3.4
+    depends_on:
+      kafka:
+        condition: service_healthy
+    entrypoint: [ "/bin/sh", "-c" ]
+    command: >
+      "
+      sleep 5 &&
+      kafka-topics.sh --bootstrap-server kafka:9092 --create --if-not-exists --topic orders --partitions 1 --replication-factor 1 &&
+      "
+
+volumes:
+  zookeeper_data:
+    driver: local
+  kafka_data:
+    driver: local
+  orders-pgdata:
+  payments-pgdata:

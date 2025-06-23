@@ -1,0 +1,157 @@
+basePath: /payment/
+definitions:
+  CreateAccountRequest:
+    properties:
+      balance:
+        example: 1000000000
+        minimum: 0
+        type: number
+      full_name:
+        example: Sergey Videnin
+        type: string
+    required:
+    - full_name
+    type: object
+  UpdateAccountRequest:
+    properties:
+      amount:
+        example: 100
+        type: number
+    required:
+    - amount
+    type: object
+  models.Account:
+    properties:
+      balance:
+        type: number
+      full_name:
+        type: string
+      user_id:
+        type: string
+    type: object
+host: localhost:8002
+info:
+  contact: {}
+  title: payment-service
+  version: "1.0"
+paths:
+  /account/create:
+    post:
+      consumes:
+      - application/json
+      description: Создает новый аккаунт
+      parameters:
+      - description: Данные для создания аккаунта
+        in: body
+        name: account_data
+        required: true
+        schema:
+          $ref: '#/definitions/CreateAccountRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Аккаунт успешно создан
+          schema:
+            type: string
+        "400":
+          description: Неверные данные запроса
+          schema:
+            type: string
+        "409":
+          description: Аккаунт уже существует
+          schema:
+            type: string
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            type: string
+      tags:
+      - Accounts Manage
+  /account/get:
+    get:
+      description: Возвращает все счета
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.Account'
+            type: array
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            type: string
+      tags:
+      - Accounts Info
+  /account/get/{user_id}:
+    get:
+      description: Получить счет по ID
+      parameters:
+      - description: ID пользователя
+        in: path
+        name: user_id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Информация о счете
+          schema:
+            $ref: '#/definitions/models.Account'
+        "400":
+          description: Неверный ID пользователя
+          schema:
+            type: string
+        "404":
+          description: Счет не найден
+          schema:
+            type: string
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            type: string
+      tags:
+      - Accounts Info
+  /account/update/{user_id}:
+    patch:
+      consumes:
+      - application/json
+      description: Изменить баланс счета
+      parameters:
+      - description: ID пользователя
+        in: path
+        name: user_id
+        required: true
+        type: string
+      - description: Данные для обновления баланса
+        in: body
+        name: update_data
+        required: true
+        schema:
+          $ref: '#/definitions/UpdateAccountRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Баланс успешно обновлен
+          schema:
+            type: string
+        "400":
+          description: Неверные данные запроса
+          schema:
+            type: string
+        "404":
+          description: Аккаунт не найден
+          schema:
+            type: string
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            type: string
+      tags:
+      - Accounts Manage
+swagger: "2.0"

@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Система заказов и платежей</title>
+    <link rel="stylesheet" href="/css/page.css">
+</head>
+<body>
+<div class="container">
+    <h1>🏪 Система заказов и платежей</h1>
+
+    <div class="tabs">
+        <button class="tab active" onclick="openTab(event, 'accounts')">💳 Счета</button>
+        <button class="tab" onclick="openTab(event, 'orders')">📦 Заказы</button>
+    </div>
+
+    <div id="accounts" class="tab-content active">
+        <div class="grid">
+            <div class="card">
+                <div class="section">
+                    <h3>Создать счет</h3>
+                    <div class="form-group">
+                        <label>Полное имя</label>
+                        <input type="text" id="fullName" placeholder="Введите имя">
+                    </div>
+                    <div class="form-group">
+                        <label>Начальный баланс</label>
+                        <input type="number" id="balance" placeholder="0.00" step="0.01" min="0">
+                    </div>
+                    <button class="btn" onclick="createAccount()">Создать счет</button>
+                    <div id="createAccountResult" class="result" style="display: none;"></div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="section">
+                    <h3>Найти счет</h3>
+                    <div class="form-group">
+                        <label>ID пользователя</label>
+                        <input type="text" id="getUserId" placeholder="Введите ID">
+                    </div>
+                    <button class="btn" onclick="getAccount()">Найти счет</button>
+                    <div id="getAccountResult" class="result" style="display: none;"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="section">
+                <h3>Обновить баланс</h3>
+                <div class="two-column">
+                    <div class="form-group">
+                        <label>ID пользователя</label>
+                        <input type="text" id="updateUserId" placeholder="Введите ID">
+                    </div>
+                    <div class="form-group">
+                        <label>Сумма изменения</label>
+                        <input type="number" id="updateAmount" placeholder="100.00" step="0.01">
+                    </div>
+                </div>
+                <button class="btn" onclick="updateBalance()">Обновить баланс</button>
+                <div id="updateBalanceResult" class="result" style="display: none;"></div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="section">
+                <h3>Все счета</h3>
+                <button class="btn" onclick="getAllAccounts()">Загрузить все счета</button>
+                <div class="loading" id="accountsLoading">
+                    <div class="spinner"></div>
+                    <p>Загрузка...</p>
+                </div>
+                <div id="allAccountsResult" class="result" style="display: none;"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="orders" class="tab-content">
+        <div class="grid">
+            <div class="card">
+                <div class="section">
+                    <h3>Создать заказ</h3>
+                    <div class="form-group">
+                        <label>ID пользователя</label>
+                        <input type="text" id="orderUserId" placeholder="Введите ID пользователя">
+                    </div>
+                    <div class="form-group">
+                        <label>Сумма заказа</label>
+                        <input type="number" id="orderAmount" placeholder="5.00" step="0.01" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label>Описание</label>
+                        <input type="text" id="orderDescription" placeholder="Coca-cola">
+                    </div>
+                    <button class="btn" onclick="createOrder()">Создать заказ</button>
+                    <div id="createOrderResult" class="result" style="display: none;"></div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="section">
+                    <h3>Найти заказ</h3>
+                    <div class="form-group">
+                        <label>ID заказа</label>
+                        <input type="text" id="getOrderId" placeholder="Введите ID заказа">
+                    </div>
+                    <button class="btn" onclick="getOrder()">Найти заказ</button>
+                    <div id="getOrderResult" class="result" style="display: none;"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="section">
+                <h3>Все заказы</h3>
+                <button class="btn" onclick="getAllOrders()">Загрузить все заказы</button>
+                <div class="loading" id="ordersLoading">
+                    <div class="spinner"></div>
+                    <p>Загрузка...</p>
+                </div>
+                <div id="allOrdersResult" class="result" style="display: none;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const API_CONFIG = {
+        PAYMENT_SERVICE: 'http://localhost:8000/payment',
+        ORDER_SERVICE: 'http://localhost:8000/order'
+    };
+
+    function openTab(evt, tabName) {
+        const tabcontent = document.getElementsByClassName("tab-content");
+        for (let i = 0; i < tabcontent.length; i++) {
+            tabcontent[i].classList.remove("active");
+        }
+
+        const tablinks = document.getElementsByClassName("tab");
+        for (let i = 0; i < tablinks.length; i++) {
+            tablinks[i].classList.remove("active");
+        }
+
+        document.getElementById(tabName).classList.add("active");
+        evt.currentTarget.classList.add("active");
+    }
+
+    function showResult(elementId, message, isSuccess = true) {
+        const element = document.getElementById(elementId);
+        element.textContent = message;
+        element.className = `result ${isSuccess ? 'success' : 'error'}`;
+        element.style.display = 'block';
+    }
+
+    function renderJsonPretty(data) {
+        if (Array.isArray(data)) {
+            return data.map(item => `<div class="json-card">${renderJsonPretty(item)}</div>`).join('');
+        }
+
+        if (typeof data === 'object' && data !== null) {
+            return `
+                <ul class="json-list">
+                    ${Object.entries(data).map(([key, value]) => `
+                        <li><strong>${key}:</strong> ${formatJsonValue(value)}</li>
+                    `).join('')}
+                </ul>
+            `;
+        }
+
+        return `<span>${data}</span>`;
+    }
+
+    function formatJsonValue(value) {
+        if (typeof value === 'object' && value !== null) {
+            return renderJsonPretty(value);
+        }
+        return String(value);
+    }
+
+    function showJsonResult(elementId, data, isSuccess = true) {
+        const element = document.getElementById(elementId);
+        element.innerHTML = renderJsonPretty(data);
+        element.className = `result ${isSuccess ? 'success' : 'error'}`;
+        element.style.display = 'block';
+    }
+
+    async function createAccount() {
+        const fullName = document.getElementById('fullName').value.trim();
+        const balance = parseFloat(document.getElementById('balance').value) || 0;
+
+        if (!fullName) {
+            showResult('createAccountResult', 'Пожалуйста, введите полное имя', false);
+            return;
+        }
+
+        try {
+            const response = await fetch(`${API_CONFIG.PAYMENT_SERVICE}/account/create`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    full_name: fullName,
+                    balance: balance
+                })
+            });
+
+            const result = await response.text();
+
+            if (response.ok) {
+                showResult('createAccountResult', result);
+                document.getElementById('fullName').value = '';
+                document.getElementById('balance').value = '';
+            } else {
+                showResult('createAccountResult', `Ошибка: ${result}`, false);
+            }
+        } catch (error) {
+            showResult('createAccountResult', `Ошибка сети: ${error.message}`, false);
+        }
+    }
+
+    async function getAccount() {
+        const userId = document.getElementById('getUserId').value.trim();
+
+        if (!userId) {
+            showResult('getAccountResult', 'Пожалуйста, введите ID пользователя', false);
+            return;
+        }
+
+        try {
+            const response = await fetch(`${API_CONFIG.PAYMENT_SERVICE}/account/get/${userId}`);
+
+            if (response.ok) {
+                const data = await response.json();
+                showJsonResult('getAccountResult', data);
+            } else {
+                const error = await response.text();
+                showResult('getAccountResult', `Ошибка: ${error}`, false);
+            }
+        } catch (error) {
+            showResult('getAccountResult', `Ошибка сети: ${error.message}`, false);
+        }
+    }
+
+    async function updateBalance() {
+        const userId = document.getElementById('updateUserId').value.trim();
+        const amount = parseFloat(document.getElementById('updateAmount').value);
+
+        if (!userId) {
+            showResult('updateBalanceResult', 'Пожалуйста, введите ID пользователя', false);
+            return;
+        }
+
+        if (isNaN(amount) || amount === 0) {
+            showResult('updateBalanceResult', 'Пожалуйста, введите корректную сумму', false);
+            return;
+        }
+
+        try {
+            const response = await fetch(`${API_CONFIG.PAYMENT_SERVICE}/account/update/${userId}`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    amount: amount
+                })
+            });
+
+            const result = await response.text();
+
+            if (response.ok) {
+                showResult('updateBalanceResult', result);
+            } else {
+                showResult('updateBalanceResult', `Ошибка: ${result}`, false);
+            }
+        } catch (error) {
+            showResult('updateBalanceResult', `Ошибка сети: ${error.message}`, false);
+        }
+    }
+
+    async function getAllAccounts() {
+        const loading = document.getElementById('accountsLoading');
+        const result = document.getElementById('allAccountsResult');
+
+        loading.style.display = 'block';
+        result.style.display = 'none';
+
+        try {
+            const response = await fetch(`${API_CONFIG.PAYMENT_SERVICE}/account/get`);
+
+            if (response.ok) {
+                const data = await response.json();
+                showJsonResult('allAccountsResult', data);
+            } else {
+                const error = await response.text();
+                showResult('allAccountsResult', `Ошибка: ${error}`, false);
+            }
+        } catch (error) {
+            showResult('allAccountsResult', `Ошибка сети: ${error.message}`, false);
+        } finally {
+            loading.style.display = 'none';
+        }
+    }
+
+    async function createOrder() {
+        const userId = document.getElementById('orderUserId').value.trim();
+        const amount = parseFloat(document.getElementById('orderAmount').value);
+        const description = document.getElementById('orderDescription').value.trim();
+
+        if (!userId) {
+            showResult('createOrderResult', 'Пожалуйста, введите ID пользователя', false);
+            return;
+        }
+
+        if (isNaN(amount) || amount <= 0) {
+            showResult('createOrderResult', 'Пожалуйста, введите корректную сумму', false);
+            return;
+        }
+
+        if (!description) {
+            showResult('createOrderResult', 'Пожалуйста, введите описание заказа', false);
+            return;
+        }
+
+        try {
+            const response = await fetch(`${API_CONFIG.ORDER_SERVICE}/create/${userId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    amount: amount,
+                    descr: description
+                })
+            });
+
+            const result = await response.text();
+
+            if (response.ok) {
+                showResult('createOrderResult', result);
+                document.getElementById('orderUserId').value = '';
+                document.getElementById('orderAmount').value = '';
+                document.getElementById('orderDescription').value = '';
+            } else {
+                showResult('createOrderResult', `Ошибка: ${result}`, false);
+            }
+        } catch (error) {
+            showResult('createOrderResult', `Ошибка сети: ${error.message}`, false);
+        }
+    }
+
+    async function getOrder() {
+        const orderId = document.getElementById('getOrderId').value.trim();
+
+        if (!orderId) {
+            showResult('getOrderResult', 'Пожалуйста, введите ID заказа', false);
+            return;
+        }
+
+        try {
+            const response = await fetch(`${API_CONFIG.ORDER_SERVICE}/get/${orderId}`);
+
+            if (response.ok) {
+                const data = await response.json();
+                showJsonResult('getOrderResult', data);
+            } else {
+                const error = await response.text();
+                showResult('getOrderResult', `Ошибка: ${error}`, false);
+            }
+        } catch (error) {
+            showResult('getOrderResult', `Ошибка сети: ${error.message}`, false);
+        }
+    }
+
+    async function getAllOrders() {
+        const loading = document.getElementById('ordersLoading');
+        const result = document.getElementById('allOrdersResult');
+
+        loading.style.display = 'block';
+        result.style.display = 'none';
+
+        try {
+            const response = await fetch(`${API_CONFIG.ORDER_SERVICE}/get`);
+
+            if (response.ok) {
+                const data = await response.json();
+                showJsonResult('allOrdersResult', data);
+            } else {
+                const error = await response.text();
+                showResult('allOrdersResult', `Ошибка: ${error}`, false);
+            }
+        } catch (error) {
+            showResult('allOrdersResult', `Ошибка сети: ${error.message}`, false);
+        } finally {
+            loading.style.display = 'none';
+        }
+    }
+</script>
+</body>
+</html>
